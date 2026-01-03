@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Polygon Sketching (Web)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        #toolbar {
+            margin-bottom: 10px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            cursor: crosshair;
+            background-color: #f9f9f9;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toolbar">
+        <button id="btnUndo">Undo</button>
+        <button id="btnRedo">Redo</button>
+        <button id="btnClear">Clear All</button>
+    </div>
+
+    <canvas id="polygonCanvas" width="800" height="600"></canvas>
+
+    <div style="margin-top: 10px; color: #666; font-size: 0.9em;">
+        <strong>Instructions:</strong> Click to add points. Double-click or Right-click to complete a polygon.
+    </div>
+
+    <script>
+        const canvas = document.getElementById('polygonCanvas');
+        const ctx = canvas.getContext('2d');
+        const btnUndo = document.getElementById('btnUndo');
+        const btnRedo = document.getElementById('btnRedo');
+        const btnClear = document.getElementById('btnClear');
+
+        // --- 1. DATA MODEL ---
+
+        let state = {
+            finishedPolygons: [],
+            currentPolygon: null, // { vertices: [] }
+            mousePos: null        // { x, y }
+        };
+
+        let undoStack = [];
+        let redoStack = [];
+
+        // --- 2. HELPERS ---
+
+        function deepCopyState(s) {
+            return {
+                finishedPolygons: s.finishedPolygons.map(p => ({ vertices: [...p.vertices] })),
+                currentPolygon: s.currentPolygon ? { vertices: [...s.currentPolygon.vertices] } : null,
+                mousePos: s.mousePos ? { ...s.mousePos } : null
+            };
+        }
+
+        function saveStateForUndo() {
+            undoStack.push(deepCopyState(state));
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+
+            // 1. Draw Finished Polygons (Green)
+            ctx.strokeStyle = 'green';
+            state.finishedPolygons.forEach(poly => {
+                drawPolyLine(poly.vertices);
+            });
+
+            // 2. Draw Current Polygon (Red)
+            if (state.currentPolygon) {
+                ctx.strokeStyle = 'red';
+                let pointsToDraw = [...state.currentPolygon.vertices];
+                if (state.mousePos) {
+                    pointsToDraw.push(state.mousePos);
+                }
+                drawPolyLine(pointsToDraw);
+            }
+        }
+
+        function drawPolyLine(points) {
+            if (points.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.stroke();
+        }
+
+        // --- 3. EVENT LISTENERS ---
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            state.mousePos = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+            render();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const p = {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+
+            if (state.currentPolygon) {
+                const last = state.currentPolygon.vertices[state.currentPolygon.vertices.length - 1];
+                if (last && last.x === p.x && last.y === p.y) {
+                    return; // Don't add duplicate point (likely from double click)
+                }
+            }
+
+            saveStateForUndo();
+            redoStack = [];
+
+            if (!state.currentPolygon) {
+                state.currentPolygon = { vertices: [] };
+            }
+            state.currentPolygon.vertices.push(p);
+            render();
+        });
+
+        canvas.addEventListener('dblclick', (e) => {
+            e.preventDefault();
+            finishCurrentPolygon();
+        });
+
+        // Right click to finish as well
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            finishCurrentPolygon();
+        });
+
+        function finishCurrentPolygon() {
+            if (state.currentPolygon && state.currentPolygon.vertices.length > 0) {
+                saveStateForUndo();
+                
+                // Filter out consecutive identical points (common with double clicks)
+                const uniqueVertices = [];
+                state.currentPolygon.vertices.forEach(v => {
+                    if (uniqueVertices.length === 0) {
+                        uniqueVertices.push(v);
+                    } else {
+                        const last = uniqueVertices[uniqueVertices.length - 1];
+                        if (last.x !== v.x || last.y !== v.y) {
+                            uniqueVertices.push(v);
+                        }
+                    }
+                });
+
+                if (uniqueVertices.length >= 2) {
+                    state.currentPolygon.vertices = uniqueVertices;
+                    state.finishedPolygons.push(state.currentPolygon);
+                }
+                
+                state.currentPolygon = null;
+                redoStack = [];
+                render();
+            }
+        }
+
+        btnUndo.addEventListener('click', () => {
+            if (undoStack.length === 0) return;
+            redoStack.push(deepCopyState(state));
+            state = undoStack.pop();
+            render();
+        });
+
+        btnRedo.addEventListener('click', () => {
+            if (redoStack.length === 0) return;
+            undoStack.push(deepCopyState(state));
+            state = redoStack.pop();
+            render();
+        });
+
+        btnClear.addEventListener('click', () => {
+            saveStateForUndo();
+            state.finishedPolygons = [];
+            state.currentPolygon = null;
+            redoStack = [];
+            render();
+        });
+
+        // Initial render
+        render();
+
+    </script>
+</body>
+</html>
