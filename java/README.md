@@ -16,8 +16,9 @@ This is a Spring Boot application for polygon sketching on an HTML5 Canvas.
 3. Select `Run Polygon Web App`.
 
 #### Option 2: Terminal
-Run the following command:
+Run the following commands:
 ```bash
+cd java
 C:\Users\Admin\.maven\maven-3.9.12\bin\mvn.cmd spring-boot:run
 ```
 Once the application is running, open your browser and navigate to:

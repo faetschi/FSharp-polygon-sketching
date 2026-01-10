@@ -53,7 +53,7 @@ let init () =
 
 
 (*
-TODO: implement the core logics of the drawing app, which means:
+DONE: implement the core logics of the drawing app, which means:
 Depending on the message,
 For AddPoint mesages, add the point to the current polygon.
  - if there is no current polygon yet, create a new one with this point as its only vertex.
