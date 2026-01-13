@@ -1,0 +1,22 @@
+<div class="app-container">
+  <h1 class="app-title">Polygon Sketching Tool</h1>
+
+  <app-toolbar
+    [canUndo]="canUndo()"
+    [canRedo]="canRedo()"
+    (undo)="undo()"
+    (redo)="redo()"
+    (clear)="clearCanvas()"
+  ></app-toolbar>
+
+  <app-canvas 
+    [polylines]="polylines" 
+    [activePoint]="getActivePoint()"
+    (pointClicked)="onPointAdded($event)"
+    (pathFinished)="onFinishPath()">
+  </app-canvas>
+  <div>
+    Status: {{ isPathActive() ? 'Line active (double click to finish)' :
+    'Ready for new line' }}
+  </div>
+</div>

@@ -1,0 +1,23 @@
+:root {
+    --primary-color: #3b82f6;
+    --primary-dark: #1d4ed8;
+    --danger-color: #ef4444;
+    --bg-color: #f3f4f6;
+    --surface-color: #ffffff;
+    --text-color: #1f2937;
+    --border-color: #e5e7eb;
+}
+
+body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+button {
+    font-family: inherit;
+    font-size: 100%;
+    margin: 0;
+    line-height: 1.15;
+}

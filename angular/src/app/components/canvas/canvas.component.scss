@@ -1,0 +1,29 @@
+.canvas-wrapper {
+    position: relative;
+    background-color: var(--surface-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+    border: 1px solid #d1d5db;
+    overflow: hidden;
+    cursor: crosshair;
+    display: inline-block;
+}
+
+canvas {
+    display: block;
+    touch-action: none;
+}
+
+.hint-text {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    font-size: 0.75rem;
+    /* 12px */
+    color: #9ca3af;
+    pointer-events: none;
+    user-select: none;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 2px 6px;
+    border-radius: 4px;
+}

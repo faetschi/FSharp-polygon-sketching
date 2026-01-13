@@ -1,0 +1,12 @@
+<div class="canvas-wrapper">
+  <canvas
+      #drawingCanvas
+      [width]="width" 
+      [height]="height"
+      (click)="handleCanvasClick($event)"
+      (dblclick)="handleDoubleClick($event)"
+      (mousemove)="handleMouseMove($event)"
+      (mouseleave)="handleMouseLeave()"
+  >
+  </canvas>
+</div>

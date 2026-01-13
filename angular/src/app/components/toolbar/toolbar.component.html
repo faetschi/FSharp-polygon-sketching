@@ -1,0 +1,13 @@
+<div class="toolbar">
+  <button class="btn" (click)="undo.emit()" [disabled]="!canUndo">
+    Rückgängig
+  </button>
+
+  <button class="btn" (click)="redo.emit()" [disabled]="!canRedo">
+    Wiederholen
+  </button>
+
+  <div class="separator"></div>
+
+  <button class="btn btn--danger" (click)="clear.emit()">Alles Löschen</button>
+</div>
