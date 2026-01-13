@@ -26,6 +26,7 @@ type Model = {
     // the polygon, we are currently working on (and extending, vertex-by-vertex). Having the current
     // one explicitly as oposed to already in the finishedPolygons list makes the code a bit more elegant
     // and approachable
+    // === Options - e.g. Option<Coord> instead of null to safely handle missing values ===
     currentPolygon : Option<PolyLine>
     // current positon of the mouse (to draw a preview)
     mousePos : Option<Coord>
@@ -37,9 +38,10 @@ type Model = {
 
 // and explicit representation of all possible user interactions. This one can be used for 
 // automatic testing or storing interaction logs to disk
+// === Discriminated Unions - clearly defines all possible user actions ===
 type Msg =
-    | AddPoint of Coord
-    | SetCursorPos of Option<Coord>
+    | AddPoint of Coord                 // no null coord exists
+    | SetCursorPos of Option<Coord>     // null coord exists
     | FinishPolygon
     | Undo
     | Redo
@@ -64,24 +66,26 @@ For FinishPolygon mesages:
 *)
 let updateModel (msg : Msg) (model : Model) =
     match msg with
-    | AddPoint p ->
-        let poly = 
+    // === Discriminated Unions ===
+    | AddPoint coord ->
             match model.currentPolygon with
             //  - if there is no current polygon yet, create a new one with this point as its only vertex.
-            | None -> [p]
+            | None -> 
+                { model with currentPolygon = Some [coord];}
             //  - if there is already a polygon, prepend (or append if you like) it to the list of vertices
-            | Some poly -> p :: poly // O(1) prepend the new point
-        { model with currentPolygon = Some poly; future = None }
+            | Some poly -> // O(1) prepend the new point
+                { model with currentPolygon = Some (coord :: poly);}
     | FinishPolygon ->
+        // === Pattern Matching - to handle messages ===
         match model.currentPolygon with
         // - if there is no current polygon (this means right click was used before even adding a single vertex), ignore the message
-        | None -> model
+        | None -> 
+            model
         //  - if there is a current polygon, reset the current polygon to None and add the current polygon as a new element to finishedPolygons.
         | Some poly -> 
             { model with 
                 finishedPolygons = poly :: model.finishedPolygons
-                currentPolygon = None
-                future = None }
+                currentPolygon = None }
     | _ -> model
 
 // wraps an update function with undo/redo.
@@ -93,16 +97,17 @@ let addUndoRedo (updateFunction : Msg -> Model -> Model) (msg : Msg) (model : Mo
         // update the mouse position and create a new model.
         { model with mousePos = p }
     | Undo -> 
-        // DONE implement undo logics, HINT: restore the model stored in past, and replace the current
-        // state with it.
+        // DONE implement undo logics, HINT: restore the model stored in past, and replace the current state with it.
         match model.past with
-        | Some p -> { p with future = Some model }
         | None -> model
+        | Some pastModel ->
+            { pastModel with future = Some model }   // past: pastModel present: pastModel future: currentModel
     | Redo -> 
         // DONE: same as undo
         match model.future with
-        | Some f -> f
         | None -> model
+        | Some futureModel -> 
+            { futureModel with past = Some model }
     | _ -> 
         // use the provided update function for all remaining messages
         { updateFunction msg model with past = Some model }
@@ -117,6 +122,8 @@ let getSvgCoordinates (o: Browser.Types.MouseEvent): Coord = jsNative
 
 let viewPolygon (color : string) (points : PolyLine) =
     points 
+    // === Higher-Order Functions - use of List.map and List.pairwise ===
+    // === Piping (|>|) used to chain function calls ===
     |> List.pairwise 
     |> List.map (fun (c0,c1) ->
         Svg.line [
